@@ -1,0 +1,1218 @@
+<!--
+SPDX-FileCopyrightText: 2026 Tim Cocks for Adafruit Industries
+
+SPDX-License-Identifier: MIT
+-->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🌡️🔑🔒</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: system-ui, -apple-system, sans-serif;
+            background: #0f1117;
+            color: #c9d1d9;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 2rem 1rem;
+            gap: 1.25rem;
+        }
+
+        section {
+            width: 560px;
+        }
+
+        h1 {
+            font-size: 1.5rem;
+            color: #58a6ff;
+            letter-spacing: 0.02em;
+        }
+
+        h1 span {
+            color: #8b949e;
+            font-weight: 400;
+            font-size: 1rem;
+        }
+
+        h1.section-title {
+            font-size: 1.2rem;
+            margin-top: 0.25rem;
+        }
+
+        #drop-zone {
+            width: 100%;
+            max-width: 560px;
+            border: 2px dashed #30363d;
+            border-radius: 10px;
+            padding: 2.5rem 2rem;
+            text-align: center;
+            cursor: pointer;
+            transition: border-color 0.15s, background 0.15s;
+            user-select: none;
+        }
+
+        #drop-zone:hover, #drop-zone.over {
+            border-color: #58a6ff;
+            background: rgba(88, 166, 255, 0.04);
+        }
+
+        #drop-zone svg {
+            opacity: 0.35;
+        }
+
+        #drop-zone p {
+            margin-top: 0.6rem;
+            color: #8b949e;
+            font-size: 0.875rem;
+        }
+
+        #preview-wrap {
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            gap: 0.4rem;
+        }
+
+        #preview {
+            max-width: 480px;
+            max-height: 280px;
+            border-radius: 6px;
+            border: 1px solid #30363d;
+        }
+
+        #img-info {
+            font-size: 0.8rem;
+            color: #8b949e;
+        }
+
+        .fields {
+            display: flex;
+            flex-direction: column;
+            gap: 0.9rem;
+            width: 100%;
+            max-width: 560px;
+        }
+
+        .field {
+            display: flex;
+            flex-direction: column;
+            gap: 0.3rem;
+        }
+
+        .field-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .field-header label, .field > label {
+            font-size: 0.8rem;
+            color: #8b949e;
+            font-weight: 500;
+        }
+
+        .field input, .field select {
+            background: #161b22;
+            border: 1px solid #30363d;
+            border-radius: 6px;
+            color: #c9d1d9;
+            padding: 0.45rem 0.7rem;
+            font-family: 'SF Mono', 'Fira Code', monospace;
+            font-size: 0.82rem;
+            outline: none;
+            transition: border-color 0.15s;
+            width: 100%;
+        }
+
+        .field select {
+            font-family: system-ui, -apple-system, sans-serif;
+            cursor: pointer;
+            appearance: none;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%238b949e' stroke-width='2'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: right 0.6rem center;
+            padding-right: 2rem;
+        }
+
+        .field select option {
+            background: #161b22;
+        }
+
+        .field input.text-mode {
+            font-family: system-ui, -apple-system, sans-serif;
+        }
+
+        .field input:focus, .field select:focus {
+            border-color: #58a6ff;
+        }
+
+        .field input.invalid {
+            border-color: #f85149;
+        }
+
+        .field .hint {
+            font-size: 0.75rem;
+            color: #484f58;
+        }
+
+        .row {
+            display: flex;
+            gap: 0.9rem;
+        }
+
+        .row .field {
+            flex: 1;
+        }
+
+        .computed-range {
+            background: #0b0e13;
+            border: 1px solid #30363d;
+            border-radius: 6px;
+            color: #58a6ff;
+            padding: 0.45rem 0.7rem;
+            font-family: 'SF Mono', 'Fira Code', monospace;
+            font-size: 0.82rem;
+            letter-spacing: 0.04em;
+        }
+
+        .computed-range.empty {
+            color: #484f58;
+        }
+
+        button#go-btn, button#vig-go-btn {
+            padding: 0.6rem 1.8rem;
+            background: #238636;
+            color: #fff;
+            border: 1px solid #2ea043;
+            border-radius: 6px;
+            font-size: 0.95rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background 0.15s;
+            align-self: flex-start;
+        }
+
+        button#go-btn:hover:not(:disabled), button#vig-go-btn:hover:not(:disabled) {
+            background: #2ea043;
+        }
+
+        button#go-btn:disabled {
+            background: #21262d;
+            border-color: #30363d;
+            color: #484f58;
+            cursor: default;
+        }
+
+        #status {
+            font-size: 0.82rem;
+            min-height: 1.1rem;
+            color: #8b949e;
+        }
+
+        #status.error {
+            color: #f85149;
+        }
+
+        #status.ok {
+            color: #3fb950;
+        }
+
+        #progress-bar-wrap {
+            width: 100%;
+            max-width: 560px;
+            height: 3px;
+            background: #21262d;
+            border-radius: 3px;
+            overflow: hidden;
+            display: none;
+        }
+
+        #progress-bar {
+            height: 100%;
+            width: 0%;
+            background: #58a6ff;
+            transition: width 0.1s;
+        }
+
+        #download-link {
+            display: none;
+            padding: 0.6rem 1.8rem;
+            background: #1f6feb;
+            color: #fff;
+            border: 1px solid #388bfd;
+            border-radius: 6px;
+            font-size: 0.95rem;
+            font-weight: 600;
+            text-decoration: none;
+            transition: background 0.15s;
+        }
+
+        #download-link:hover {
+            background: #388bfd;
+        }
+
+        canvas {
+            display: none;
+        }
+
+        hr.section-divider {
+            width: 100%;
+            max-width: 560px;
+            border: none;
+            border-top: 1px solid #21262d;
+            margin: 1.5rem 0 0.5rem;
+        }
+
+        .field textarea {
+            background: #161b22;
+            border: 1px solid #30363d;
+            border-radius: 6px;
+            color: #c9d1d9;
+            padding: 0.55rem 0.7rem;
+            font-family: 'SF Mono', 'Fira Code', monospace;
+            font-size: 0.82rem;
+            outline: none;
+            transition: border-color 0.15s;
+            width: 100%;
+            resize: vertical;
+            min-height: 4.5rem;
+        }
+
+        .field textarea:focus {
+            border-color: #58a6ff;
+        }
+
+        #vig-output, .entry-output {
+            background: #0b0e13;
+            border: 1px solid #30363d;
+            border-radius: 6px;
+            color: #c9d1d9;
+            padding: 0.55rem 0.7rem;
+            font-family: 'SF Mono', 'Fira Code', monospace;
+            font-size: 0.82rem;
+            width: 100%;
+            min-height: 4.5rem;
+            word-break: break-all;
+            white-space: pre-wrap;
+        }
+
+        .entry-output {
+            min-height: auto;
+            word-break: normal;
+        }
+
+        .output-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .output-header label {
+            font-size: 0.8rem;
+            color: #8b949e;
+            font-weight: 500;
+        }
+
+        button.copy-btn {
+            padding: 0.15rem 0.55rem;
+            font-size: 0.7rem;
+            font-weight: 600;
+            border-radius: 4px;
+            border: 1px solid #30363d;
+            background: transparent;
+            color: #8b949e;
+            cursor: pointer;
+            transition: background 0.12s, color 0.12s, border-color 0.12s;
+            letter-spacing: 0.03em;
+        }
+
+        button.copy-btn:hover {
+            color: #58a6ff;
+            border-color: #58a6ff;
+        }
+
+        button.copy-btn.copied {
+            color: #3fb950;
+            border-color: #3fb950;
+        }
+
+        .tabs {
+            display: flex;
+            border-bottom: 1px solid #616b75;
+            background: #444752;
+            border-radius: 15px 15px 0 0;
+        }
+
+        .tab {
+            flex: 1;
+            padding: 16px 24px;
+            background: none;
+            border: none;
+            border-radius: 15px 15px 0 0;
+            font-size: 15px;
+            color: #ccc;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            border-bottom: 3px solid transparent;
+            font-weight: bolder;
+        }
+
+        .tab:hover {
+            background: #333;
+            color: #f0f0f3;
+        }
+
+        .tab.active {
+            color: #499aff;
+            border-bottom-color: #007aff;
+            background: #222;
+        }
+
+        .tab-content {
+            padding: 32px;
+            display: none;
+            animation: fadeIn 0.3s ease;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(4px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <div class="tabs">
+        <button class="tab active" data-target="tab1">Text</button>
+        <button class="tab" data-target="tab2">Image</button>
+    </div>
+    
+    <div id="tab1" class="tab-content active">
+        <section>
+            <h1 class="section-title">Vigenère Text Encryptor <span>→ printable ASCII (32–126)</span></h1>
+            
+            <div class="fields">
+                <div class="row">
+                    <div class="field">
+                        <label for="vig-reading">Reading type</label>
+                        <select id="vig-reading">
+                            <option value="temperature">temperature (°C)</option>
+                            <option value="humidity">humidity (%)</option>
+                            <option value="co2">co2 (ppm)</option>
+                            <option value="lux">lux (lux)</option>
+                            <option value="other">Other (custom)</option>
+                        </select>
+                    </div>
+                    <div class="field" id="vig-bucket-field">
+                        <label for="vig-bucket-size">Precision level</label>
+                        <input id="vig-bucket-size" type="number" min="1" step="1" value="1"
+                               placeholder="e.g. 1">
+                    </div>
+                    <div class="field" id="vig-sensor-field">
+                        <label for="vig-sensor-value">Sensor value <span id="vig-unit-label"
+                                                                         style="color:#484f58">(°C)</span></label>
+                        <input id="vig-sensor-value" type="number" step="any" placeholder="e.g. 22.5">
+                    </div>
+                </div>
+                
+                <div class="field" id="vig-range-field">
+                    <label>Computed range string <span style="color:#484f58;font-weight:400">(key seed)</span></label>
+                    <div id="vig-range-display" class="computed-range empty">—</div>
+                    <span class="hint">Derived from sensor value and precision level. Must match the value on the microcontroller at solve time.</span>
+                </div>
+                
+                <div id="vig-other-fields" style="display:none">
+                    <div class="row">
+                        <div class="field">
+                            <label for="vig-custom-reading">Custom reading type</label>
+                            <input id="vig-custom-reading" type="text" spellcheck="false" autocomplete="off"
+                                   placeholder="e.g. light_lux">
+                            <span class="hint">Stored as the <code>"reading"</code> field in the entry.</span>
+                        </div>
+                        <div class="field">
+                            <label for="vig-custom-key-seed">Key seed string</label>
+                            <input id="vig-custom-key-seed" type="text" spellcheck="false" autocomplete="off"
+                                   placeholder="e.g. 200-300">
+                            <span class="hint">Used directly as the key seed (no range computation).</span>
+                        </div>
+                        <div class="field">
+                            <label for="vig-custom-bucket-size">Precision level</label>
+                            <input id="vig-custom-bucket-size" type="number" min="1" step="1" value="1">
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="field">
+                    <label for="vig-plaintext">Plaintext</label>
+                    <textarea id="vig-plaintext" spellcheck="false" autocomplete="off"
+                              placeholder="Super secret message"></textarea>
+                    <span class="hint">Newlines pass through unchanged. Other characters must be in printable ASCII (32–126).</span>
+                </div>
+                
+                <button id="vig-go-btn">Encrypt</button>
+                
+                <div class="field" style="display:none">
+                    <div class="output-header">
+                        <label>Ciphertext <span
+                                style="color:#484f58;font-weight:400">(Python-escaped, paste between <code>"..."</code>)</span></label>
+                    </div>
+                    <div id="vig-output"></div>
+                    <span class="hint" id="vig-status"></span>
+                </div>
+                
+                <div class="field" id="vig-entry-wrap" style="display:none">
+                    <div class="output-header">
+                        <label>SEQUENCE entry <span
+                                style="color:#484f58;font-weight:400">(paste into code.py)</span></label>
+                        <button class="copy-btn" id="vig-entry-copy-btn">copy</button>
+                    </div>
+                    <div id="vig-entry-output" class="entry-output"></div>
+                </div>
+            </div>
+        </section>
+    </div>
+    
+    <div id="tab2" class="tab-content">
+        <section>
+            <h1>ABMP Encryptor <span>→ CircuitPython arrayblit()</span></h1>
+            
+            <div id="drop-zone">
+                <svg width="40" height="40" viewBox="0 0 24 24" fill="none"
+                     stroke="#58a6ff" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                    <rect x="3" y="3" width="18" height="18" rx="2"/>
+                    <circle cx="8.5" cy="8.5" r="1.5"/>
+                    <polyline points="21 15 16 10 5 21"/>
+                </svg>
+                <p>Drop an image here, or click to browse</p>
+                <input type="file" id="file-input" accept="image/*" style="display:none">
+            </div>
+            
+            <div id="preview-wrap">
+                <img id="preview" alt="Preview">
+                <div id="img-info"></div>
+            </div>
+            
+            <div class="fields">
+                <div class="row">
+                    <div class="field">
+                        <label for="img-reading">Reading type</label>
+                        <select id="img-reading">
+                            <option value="temperature">temperature (°C)</option>
+                            <option value="humidity">humidity (%)</option>
+                            <option value="co2">co2 (ppm)</option>
+                            <option value="lux">lux (lux)</option>
+                            <option value="other">Other (custom)</option>
+                        </select>
+                    </div>
+                    <div class="field" id="img-bucket-field">
+                        <label for="img-bucket-size">Precision level</label>
+                        <input id="img-bucket-size" type="number" min="1" step="1" value="1"
+                               placeholder="e.g. 5">
+                    </div>
+                    <div class="field" id="img-sensor-field">
+                        <label for="img-sensor-value">Sensor value <span id="img-unit-label"
+                                                                         style="color:#484f58">(°C)</span></label>
+                        <input id="img-sensor-value" type="number" step="any" placeholder="e.g. 45.3">
+                    </div>
+                </div>
+                
+                <div class="field" id="img-range-field">
+                    <label>Computed range string <span
+                            style="color:#484f58;font-weight:400">(AES key seed)</span></label>
+                    <div id="img-range-display" class="computed-range empty">—</div>
+                    <span class="hint">Derived from sensor value and precision level. SHA-256 of this string becomes the AES-256 key.</span>
+                </div>
+                
+                <div id="img-other-fields" style="display:none">
+                    <div class="row">
+                        <div class="field">
+                            <label for="img-custom-reading">Custom reading type</label>
+                            <input id="img-custom-reading" type="text" spellcheck="false" autocomplete="off"
+                                   placeholder="e.g. light_lux">
+                            <span class="hint">Stored as the <code>"reading"</code> field in the entry.</span>
+                        </div>
+                        <div class="field">
+                            <label for="img-custom-key-seed">Key seed string</label>
+                            <input id="img-custom-key-seed" type="text" spellcheck="false" autocomplete="off"
+                                   placeholder="e.g. 200-300">
+                            <span class="hint">Used directly as the key seed (no range computation).</span>
+                        </div>
+                        <div class="field">
+                            <label for="img-custom-bucket-size">Precision level</label>
+                            <input id="img-custom-bucket-size" type="number" min="1" step="1" value="1">
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="field">
+                    <div class="field-header">
+                        <label>Nonce / IV</label>
+                    </div>
+                    <input id="nonce-input" type="text" spellcheck="false" autocomplete="off" class="text-mode"
+                           value="InitializationVe">
+                    <span id="nonce-hint" class="hint">16 chars (ASCII/Latin-1 only) — stored as the <code>iv</code> field in your SEQUENCE entry.</span>
+                </div>
+                
+                <div class="row">
+                    <div class="field">
+                        <label>Max palette colors</label>
+                        <input id="colors-input" type="number" min="2" max="256" value="256">
+                        <span class="hint">2–256</span>
+                    </div>
+                </div>
+            </div>
+            
+            <div id="progress-bar-wrap">
+                <div id="progress-bar"></div>
+            </div>
+            <div id="status"></div>
+            <button id="go-btn" disabled>Encrypt &amp; Download</button>
+            <a id="download-link">⬇ Download .abmp.enc</a>
+            
+            <div class="fields" style="margin-top:0.9rem">
+                <div class="field" id="img-entry-wrap" style="display:none">
+                    <div class="output-header">
+                        <label>SEQUENCE entry <span
+                                style="color:#484f58;font-weight:400">(paste into code.py)</span></label>
+                        <button class="copy-btn" id="img-entry-copy-btn">copy</button>
+                    </div>
+                    <div id="img-entry-output" class="entry-output"></div>
+                </div>
+            </div>
+            
+            <canvas id="canvas"></canvas>
+        
+        </section>
+    </div>
+</div>
+
+
+<script>
+
+    // --- Tab handling ---------------
+
+    const tabs = document.querySelectorAll('.tab');
+    const contents = document.querySelectorAll('.tab-content');
+
+    tabs.forEach(tab => {
+        tab.addEventListener('click', () => {
+            const target = tab.dataset.target;
+
+            tabs.forEach(t => t.classList.remove('active'));
+            contents.forEach(c => c.classList.remove('active'));
+
+            tab.classList.add('active');
+            document.getElementById(target).classList.add('active');
+        });
+    });
+
+    // --- Utilities ----------------------------------------------------------------
+
+    function hexToBytes(hex) {
+        hex = hex.replace(/\s+/g, '');
+        if (hex.length % 2 !== 0) throw new Error('Hex string has odd length');
+        const out = new Uint8Array(hex.length / 2);
+        for (let i = 0; i < out.length; i++)
+            out[i] = parseInt(hex.slice(i * 2, i * 2 + 2), 16);
+        return out;
+    }
+
+    function strToBytes(str) {
+        const out = new Uint8Array(str.length);
+        for (let i = 0; i < str.length; i++) {
+            const code = str.charCodeAt(i);
+            if (code > 255) throw new Error(`Character '${str[i]}' at position ${i} is outside the 0–255 byte range`);
+            out[i] = code;
+        }
+        return out;
+    }
+
+    function setStatus(msg, type = '') {
+        const el = document.getElementById('status');
+        el.textContent = msg;
+        el.className = type;
+    }
+
+    function setProgress(pct) {
+        const wrap = document.getElementById('progress-bar-wrap');
+        const bar = document.getElementById('progress-bar');
+        wrap.style.display = pct < 100 ? 'block' : 'none';
+        bar.style.width = pct + '%';
+    }
+
+    async function sha256Hex(data) {
+        let bytes = typeof data === 'string' ? new TextEncoder().encode(data) : data;
+        const digest = await crypto.subtle.digest('SHA-256', bytes);
+        return Array.from(new Uint8Array(digest))
+            .map(b => b.toString(16).padStart(2, '0'))
+            .join('');
+    }
+
+    // --- Range string computation -------------------------------------------------
+    // Matches CircuitPython: int(reading) // precision_level * precision_level → "lo-hi"
+
+    const READING_UNITS = {
+        temperature: '°C',
+        humidity: '%',
+        co2: 'ppm',
+        lux: 'lux',
+    };
+
+    function computeRangeString(sensorValue, bucketSize) {
+        const val = Math.trunc(parseFloat(sensorValue));
+        const bs = parseInt(bucketSize, 10);
+        if (isNaN(val) || isNaN(bs) || bs <= 0) return null;
+        const bucket = Math.trunc(val / bs) * bs;
+        return `${bucket}-${bucket + bs}`;
+    }
+
+    function updateRangeDisplay(rangeDisplayId, sensorInputId, bucketInputId, unitLabelId, readingSelectId) {
+        const sensorVal = document.getElementById(sensorInputId).value;
+        const bucketVal = document.getElementById(bucketInputId).value;
+        const reading = document.getElementById(readingSelectId).value;
+        const unitEl = document.getElementById(unitLabelId);
+        const dispEl = document.getElementById(rangeDisplayId);
+
+        unitEl.textContent = reading in READING_UNITS ? '(' + READING_UNITS[reading] + ')' : '';
+
+        const range = computeRangeString(sensorVal, bucketVal);
+        if (range) {
+            dispEl.textContent = range;
+            dispEl.classList.remove('empty');
+        } else {
+            dispEl.textContent = '—';
+            dispEl.classList.add('empty');
+        }
+    }
+
+    function wireSection(prefix) {
+        const selectEl = document.getElementById(prefix + '-reading');
+        const bucketField = document.getElementById(prefix + '-bucket-field');
+        const sensorField = document.getElementById(prefix + '-sensor-field');
+        const rangeField = document.getElementById(prefix + '-range-field');
+        const otherFields = document.getElementById(prefix + '-other-fields');
+
+        function toggleOther() {
+            const isOther = selectEl.value === 'other';
+            bucketField.style.display = isOther ? 'none' : '';
+            sensorField.style.display = isOther ? 'none' : '';
+            rangeField.style.display = isOther ? 'none' : '';
+            otherFields.style.display = isOther ? 'block' : 'none';
+        }
+
+        const updateRange = () => updateRangeDisplay(
+            prefix + '-range-display',
+            prefix + '-sensor-value',
+            prefix + '-bucket-size',
+            prefix + '-unit-label',
+            prefix + '-reading'
+        );
+
+        selectEl.addEventListener('change', () => {
+            toggleOther();
+            updateRange();
+        });
+        document.getElementById(prefix + '-sensor-value').addEventListener('input', updateRange);
+        document.getElementById(prefix + '-bucket-size').addEventListener('input', updateRange);
+
+        toggleOther();
+        updateRange();
+    }
+
+    wireSection('vig');
+    wireSection('img');
+
+    // --- Validation ---------------------------------------------------------------
+
+    function validateField(inputId) {
+        const input = document.getElementById(inputId);
+        const val = input.value;
+        if (!val) {
+            input.classList.remove('invalid');
+            return;
+        }
+        const byteLen = val.length;
+        const validLengths = [16];
+        if (inputId === 'key-input') return;
+        input.classList.toggle('invalid', !validLengths.includes(byteLen));
+    }
+
+    document.getElementById('nonce-input').addEventListener('input', () => validateField('nonce-input'));
+
+    function getFieldBytes(inputId) {
+        const input = document.getElementById(inputId);
+        return strToBytes(input.value);
+    }
+
+    // --- File loading -------------------------------------------------------------
+
+    const dropZone = document.getElementById('drop-zone');
+    const fileInput = document.getElementById('file-input');
+    let loadedFile = null;
+
+    dropZone.addEventListener('click', () => fileInput.click());
+    dropZone.addEventListener('dragover', e => {
+        e.preventDefault();
+        dropZone.classList.add('over');
+    });
+    dropZone.addEventListener('dragleave', () => dropZone.classList.remove('over'));
+    dropZone.addEventListener('drop', e => {
+        e.preventDefault();
+        dropZone.classList.remove('over');
+        if (e.dataTransfer.files[0]) loadFile(e.dataTransfer.files[0]);
+    });
+    fileInput.addEventListener('change', () => {
+        if (fileInput.files[0]) loadFile(fileInput.files[0]);
+    });
+
+    function loadFile(file) {
+        loadedFile = file;
+        const url = URL.createObjectURL(file);
+        const preview = document.getElementById('preview');
+        preview.onload = () => {
+            document.getElementById('img-info').textContent =
+                `${preview.naturalWidth} × ${preview.naturalHeight} px`;
+        };
+        preview.src = url;
+        document.getElementById('preview-wrap').style.display = 'flex';
+        document.getElementById('go-btn').disabled = false;
+        document.getElementById('download-link').style.display = 'none';
+        document.getElementById('img-entry-wrap').style.display = 'none';
+        const base = file.name.replace(/\.[^.]+$/, '');
+        document.getElementById('download-link').download = base + '.abmp.enc';
+        setStatus('');
+        setProgress(100);
+    }
+
+    // --- Median-cut quantization --------------------------------------------------
+
+    function quantize(imageData, maxColors) {
+        const d = imageData.data;
+
+        const freq = new Map();
+        for (let i = 0; i < d.length; i += 4) {
+            const key = (d[i] << 16) | (d[i + 1] << 8) | d[i + 2];
+            freq.set(key, (freq.get(key) || 0) + 1);
+        }
+
+        let colors = [];
+        for (const [key, count] of freq)
+            colors.push({r: (key >>> 16) & 0xff, g: (key >>> 8) & 0xff, b: key & 0xff, count});
+
+        if (colors.length <= maxColors)
+            return colors.map(c => ({r: c.r, g: c.g, b: c.b}));
+
+        let boxes = [colors];
+        while (boxes.length < maxColors) {
+            let bestIdx = -1, bestPixels = 0;
+            for (let i = 0; i < boxes.length; i++) {
+                if (boxes[i].length < 2) continue;
+                const px = boxes[i].reduce((s, c) => s + c.count, 0);
+                if (px > bestPixels) {
+                    bestPixels = px;
+                    bestIdx = i;
+                }
+            }
+            if (bestIdx === -1) break;
+
+            const box = boxes[bestIdx];
+            let rMin = 255, rMax = 0, gMin = 255, gMax = 0, bMin = 255, bMax = 0;
+            for (const c of box) {
+                if (c.r < rMin) rMin = c.r;
+                if (c.r > rMax) rMax = c.r;
+                if (c.g < gMin) gMin = c.g;
+                if (c.g > gMax) gMax = c.g;
+                if (c.b < bMin) bMin = c.b;
+                if (c.b > bMax) bMax = c.b;
+            }
+            const ch = (rMax - rMin >= gMax - gMin && rMax - rMin >= bMax - bMin) ? 'r'
+                : (gMax - gMin >= bMax - bMin) ? 'g' : 'b';
+
+            box.sort((a, b) => a[ch] - b[ch]);
+
+            const half = bestPixels / 2;
+            let cum = 0, split = 1;
+            for (let i = 0; i < box.length - 1; i++) {
+                cum += box[i].count;
+                if (cum >= half) {
+                    split = i + 1;
+                    break;
+                }
+            }
+            boxes.splice(bestIdx, 1, box.slice(0, split), box.slice(split));
+        }
+
+        return boxes.map(box => {
+            const total = box.reduce((s, c) => s + c.count, 0);
+            return {
+                r: Math.round(box.reduce((s, c) => s + c.r * c.count, 0) / total),
+                g: Math.round(box.reduce((s, c) => s + c.g * c.count, 0) / total),
+                b: Math.round(box.reduce((s, c) => s + c.b * c.count, 0) / total),
+            };
+        });
+    }
+
+    function nearestIdx(r, g, b, palette) {
+        let best = 0, bestD = Infinity;
+        for (let i = 0; i < palette.length; i++) {
+            const dr = r - palette[i].r, dg = g - palette[i].g, db = b - palette[i].b;
+            const d = dr * dr + dg * dg + db * db;
+            if (d < bestD) {
+                bestD = d;
+                best = i;
+                if (d === 0) break;
+            }
+        }
+        return best;
+    }
+
+    // --- ABMP builder -------------------------------------------------------------
+
+    function buildAbmp(imageData, palette) {
+        const {width: w, height: h, data: d} = imageData;
+        const n = palette.length;
+        const pixelStart = 10 + n * 3;
+        const buf = new Uint8Array(pixelStart + w * h);
+        const view = new DataView(buf.buffer);
+
+        buf[0] = 0x41;
+        buf[1] = 0x42;
+        buf[2] = 0x4d;
+        buf[3] = 0x50; // "ABMP"
+        view.setUint16(4, w, true);
+        view.setUint16(6, h, true);
+        view.setUint16(8, n, true);
+
+        let off = 10;
+        for (const c of palette) {
+            buf[off++] = c.r;
+            buf[off++] = c.g;
+            buf[off++] = c.b;
+        }
+
+        const cache = new Map();
+        for (let i = 0, p = 0; i < d.length; i += 4, p++) {
+            const key = (d[i] << 16) | (d[i + 1] << 8) | d[i + 2];
+            let idx = cache.get(key);
+            if (idx === undefined) {
+                idx = nearestIdx(d[i], d[i + 1], d[i + 2], palette);
+                cache.set(key, idx);
+            }
+            buf[pixelStart + p] = idx;
+        }
+
+        return {buf, pixelStart};
+    }
+
+    // --- AES-CTR encryption (Web Crypto) -----------------------------------------
+
+    async function encryptPixels(buf, pixelStart, keyBytes, nonceBytes) {
+        if (![16, 24, 32].includes(keyBytes.length))
+            throw new Error(`Key must be 16, 24, or 32 bytes (got ${keyBytes.length})`);
+        if (nonceBytes.length !== 16)
+            throw new Error(`Nonce must be 16 bytes (got ${nonceBytes.length})`);
+
+        const cryptoKey = await crypto.subtle.importKey(
+            'raw', keyBytes, {name: 'AES-CTR'}, false, ['encrypt']
+        );
+        const encBuf = await crypto.subtle.encrypt(
+            {name: 'AES-CTR', counter: nonceBytes, length: 128},
+            cryptoKey,
+            buf.slice(pixelStart)
+        );
+
+        const out = new Uint8Array(buf.length);
+        out.set(buf.slice(0, pixelStart));
+        out.set(new Uint8Array(encBuf), pixelStart);
+        return out;
+    }
+
+    // --- Key derivation -----------------------------------------------------------
+
+    async function deriveAesKey(inputStr) {
+        const enc = new TextEncoder();
+        const digest = await crypto.subtle.digest('SHA-256', enc.encode(inputStr));
+        return new Uint8Array(digest);
+    }
+
+    // --- Main (image) -------------------------------------------------------------
+
+    document.getElementById('go-btn').addEventListener('click', async () => {
+        if (!loadedFile) return;
+
+        const isOther = document.getElementById('img-reading').value === 'other';
+        const rangeStr = isOther
+            ? document.getElementById('img-custom-key-seed').value.trim()
+            : document.getElementById('img-range-display').textContent;
+        if (!rangeStr || rangeStr === '—') {
+            setStatus(
+                'Error: ' + (isOther ? 'enter a key seed string.' : 'enter a valid sensor value and precision_level first.'),
+                'error'
+            );
+            return;
+        }
+
+        const reading = isOther
+            ? document.getElementById('img-custom-reading').value.trim()
+            : document.getElementById('img-reading').value;
+        const bucketSize = isOther
+            ? parseInt(document.getElementById('img-custom-bucket-size').value, 10)
+            : parseInt(document.getElementById('img-bucket-size').value, 10);
+        const maxColors = Math.max(2, Math.min(256, parseInt(document.getElementById('colors-input').value, 10) || 256));
+        const nonceStr = document.getElementById('nonce-input').value;
+        document.getElementById('download-link').style.display = 'none';
+        document.getElementById('img-entry-wrap').style.display = 'none';
+
+        try {
+            const keyBytes = await deriveAesKey(rangeStr);
+            const nonceBytes = getFieldBytes('nonce-input');
+
+            setProgress(10);
+            setStatus('Decoding image…');
+            await new Promise(r => setTimeout(r, 0));
+
+            const preview = document.getElementById('preview');
+            const canvas = document.getElementById('canvas');
+            canvas.width = preview.naturalWidth;
+            canvas.height = preview.naturalHeight;
+            const ctx = canvas.getContext('2d');
+            ctx.drawImage(preview, 0, 0);
+            const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+
+            setProgress(30);
+            setStatus('Quantizing colors…');
+            await new Promise(r => setTimeout(r, 0));
+            const palette = quantize(imageData, maxColors);
+
+            setProgress(60);
+            setStatus('Building ABMP…');
+            await new Promise(r => setTimeout(r, 0));
+            const {buf, pixelStart} = buildAbmp(imageData, palette);
+
+            // Compute SHA-256 of plaintext pixel data before encryption.
+            const pixelDataHash = await sha256Hex(buf.slice(pixelStart));
+
+            setProgress(80);
+            setStatus('Encrypting…');
+            const result = await encryptPixels(buf, pixelStart, keyBytes, nonceBytes);
+
+            setProgress(100);
+            const blob = new Blob([result], {type: 'application/octet-stream'});
+            const url = URL.createObjectURL(blob);
+            const link = document.getElementById('download-link');
+            link.href = url;
+            link.style.display = 'inline-block';
+            link.click();
+
+            const filename = loadedFile.name.replace(/\.[^.]+$/, '') + '.abmp.enc';
+            const kb = (result.length / 1024).toFixed(1);
+            setStatus(`${canvas.width}×${canvas.height} px · ${palette.length} colors · ${kb} KB`, 'ok');
+
+            // Build and display the SEQUENCE entry.
+            const ivRepr = nonceStr ? `b"${nonceStr}"` : 'b"InitializationVe"';
+            const entry =
+                `    {\n` +
+                `        "type":        "image",\n` +
+                `        "data":        "${filename}",\n` +
+                `        "iv":          ${ivRepr},\n` +
+                `        "sha256":      "${pixelDataHash}",\n` +
+                `        "reading":     "${reading}",\n` +
+                `        "precision_level": ${bucketSize},\n` +
+                `    },`;
+
+            document.getElementById('img-entry-output').textContent = entry;
+            document.getElementById('img-entry-wrap').style.display = 'block';
+
+        } catch (e) {
+            setProgress(100);
+            setStatus('Error: ' + e.message, 'error');
+        }
+    });
+
+    // --- Copy button for image entry ----------------------------------------------
+
+    document.getElementById('img-entry-copy-btn').addEventListener('click', async () => {
+        const text = document.getElementById('img-entry-output').textContent;
+        if (!text) return;
+        try {
+            await navigator.clipboard.writeText(text);
+            const btn = document.getElementById('img-entry-copy-btn');
+            btn.textContent = 'copied';
+            btn.classList.add('copied');
+            setTimeout(() => {
+                btn.textContent = 'copy';
+                btn.classList.remove('copied');
+            }, 1200);
+        } catch (e) {
+            setStatus('Copy failed: ' + e.message, 'error');
+        }
+    });
+
+    // --- Vigenère text encryption -------------------------------------------------
+
+    const ASCII_MIN = 32;
+    const ASCII_MAX = 126;
+    const ASCII_RANGE = ASCII_MAX - ASCII_MIN + 1; // 95
+
+    async function deriveVigenereKey(rangeStr) {
+        const enc = new TextEncoder();
+        const digest = await crypto.subtle.digest('SHA-256', enc.encode(rangeStr));
+        let binStr = '';
+        const digestBytes = new Uint8Array(digest);
+        for (let i = 0; i < digestBytes.length; i++) binStr += String.fromCharCode(digestBytes[i]);
+        const b64 = btoa(binStr);
+        const keyBytes = new Uint8Array(b64.length);
+        for (let i = 0; i < b64.length; i++) keyBytes[i] = b64.charCodeAt(i);
+        return keyBytes;
+    }
+
+    function escapeForPythonDoubleQuoted(s) {
+        return s
+            .replace(/\\/g, '\\\\')
+            .replace(/"/g, '\\"')
+            .replace(/\n/g, '\\n');
+    }
+
+    function vigenereEncrypt(plaintext, keyBytes) {
+        const out = [];
+        const keyLen = keyBytes.length;
+        let keyIdx = 0;
+        for (let i = 0; i < plaintext.length; i++) {
+            const c = plaintext.charCodeAt(i);
+            if (c >= ASCII_MIN && c <= ASCII_MAX) {
+                const kShifted = ((keyBytes[keyIdx % keyLen] - ASCII_MIN) % ASCII_RANGE + ASCII_RANGE) % ASCII_RANGE;
+                const p = (((c - ASCII_MIN) + kShifted) % ASCII_RANGE + ASCII_RANGE) % ASCII_RANGE;
+                out.push(String.fromCharCode(p + ASCII_MIN));
+                keyIdx++;
+            } else {
+                out.push(plaintext[i]);
+            }
+        }
+        return out.join('');
+    }
+
+    function setVigStatus(msg, type = '') {
+        const el = document.getElementById('vig-status');
+        el.textContent = msg;
+        el.style.color = type === 'error' ? '#f85149'
+            : type === 'ok' ? '#3fb950'
+                : '#484f58';
+    }
+
+    document.getElementById('vig-go-btn').addEventListener('click', async () => {
+        const isOther = document.getElementById('vig-reading').value === 'other';
+        const rangeStr = isOther
+            ? document.getElementById('vig-custom-key-seed').value.trim()
+            : document.getElementById('vig-range-display').textContent;
+        const reading = isOther
+            ? document.getElementById('vig-custom-reading').value.trim()
+            : document.getElementById('vig-reading').value;
+        const bucketSize = isOther
+            ? parseInt(document.getElementById('vig-custom-bucket-size').value, 10)
+            : parseInt(document.getElementById('vig-bucket-size').value, 10);
+        const plaintext = document.getElementById('vig-plaintext').value;
+        const outEl = document.getElementById('vig-output');
+        document.getElementById('vig-entry-wrap').style.display = 'none';
+
+        if (!rangeStr || rangeStr === '—') {
+            setVigStatus(
+                isOther ? 'Enter a key seed string.' : 'Enter a valid sensor value and precision_level first.',
+                'error'
+            );
+            return;
+        }
+
+        for (let i = 0; i < plaintext.length; i++) {
+            const c = plaintext.charCodeAt(i);
+            if (c === 10) continue;
+            if (c < ASCII_MIN || c > ASCII_MAX) {
+                setVigStatus(`Character at position ${i} (code ${c}) is outside printable ASCII.`, 'error');
+                return;
+            }
+        }
+
+        try {
+            const keyBytes = await deriveVigenereKey(rangeStr);
+            const ciphertext = vigenereEncrypt(plaintext, keyBytes);
+            const escaped = escapeForPythonDoubleQuoted(ciphertext);
+            outEl.textContent = escaped;
+
+            const plaintextHash = await sha256Hex(plaintext);
+            setVigStatus(
+                `${ciphertext.length} chars (${escaped.length} escaped) · key seed "${rangeStr}"`,
+                'ok'
+            );
+
+            const entry =
+                `    {\n` +
+                `        "type":        "text",\n` +
+                `        "data":        "${escaped}",\n` +
+                `        "sha256":      "${plaintextHash}",\n` +
+                `        "reading":     "${reading}",\n` +
+                `        "precision_level": ${bucketSize},\n` +
+                `    },`;
+
+            document.getElementById('vig-entry-output').textContent = entry;
+            document.getElementById('vig-entry-wrap').style.display = 'block';
+
+        } catch (e) {
+            setVigStatus('Error: ' + e.message, 'error');
+        }
+    });
+
+    document.getElementById('vig-copy-btn').addEventListener('click', async () => {
+        const text = document.getElementById('vig-output').textContent;
+        if (!text) return;
+        try {
+            await navigator.clipboard.writeText(text);
+            const btn = document.getElementById('vig-copy-btn');
+            btn.textContent = 'copied';
+            btn.classList.add('copied');
+            setTimeout(() => {
+                btn.textContent = 'copy';
+                btn.classList.remove('copied');
+            }, 1200);
+        } catch (e) {
+            setVigStatus('Copy failed: ' + e.message, 'error');
+        }
+    });
+
+    document.getElementById('vig-entry-copy-btn').addEventListener('click', async () => {
+        const text = document.getElementById('vig-entry-output').textContent;
+        if (!text) return;
+        try {
+            await navigator.clipboard.writeText(text);
+            const btn = document.getElementById('vig-entry-copy-btn');
+            btn.textContent = 'copied';
+            btn.classList.add('copied');
+            setTimeout(() => {
+                btn.textContent = 'copy';
+                btn.classList.remove('copied');
+            }, 1200);
+        } catch (e) {
+            setVigStatus('Copy failed: ' + e.message, 'error');
+        }
+    });
+</script>
+</body>
+</html>
