@@ -1180,23 +1180,6 @@ SPDX-License-Identifier: MIT
         }
     });
 
-    document.getElementById('vig-copy-btn').addEventListener('click', async () => {
-        const text = document.getElementById('vig-output').textContent;
-        if (!text) return;
-        try {
-            await navigator.clipboard.writeText(text);
-            const btn = document.getElementById('vig-copy-btn');
-            btn.textContent = 'copied';
-            btn.classList.add('copied');
-            setTimeout(() => {
-                btn.textContent = 'copy';
-                btn.classList.remove('copied');
-            }, 1200);
-        } catch (e) {
-            setVigStatus('Copy failed: ' + e.message, 'error');
-        }
-    });
-
     document.getElementById('vig-entry-copy-btn').addEventListener('click', async () => {
         const text = document.getElementById('vig-entry-output').textContent;
         if (!text) return;
